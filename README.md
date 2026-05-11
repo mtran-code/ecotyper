@@ -10,6 +10,11 @@ framework for large-scale identification of cell type-specific
 transcriptional states and their co-association patterns from bulk and
 single-cell (scRNA-seq) expression data.
 
+> [!NOTE]
+> Interested in identifying ecotypes from single-cell spatial transcriptomics data, such as Xenium, Atera, or MERSCOPE?
+> Check out [Spatial EcoTyper](https://github.com/digitalcytometry/spatialecotyper/), the latest tool in the EcoTyper suite published in Nature [Zhang/Brown/Usmani et al., 2026](https://www.nature.com/articles/s41586-026-10452-4). [Spatial EcoTyper](https://github.com/digitalcytometry/spatialecotyper/) extends the original EcoTyper to large-scale profiling of spatially organized cellular ecosystems (spatial ecotypes) from single-cell spatial transcriptomics data, and enables their systematic recovery from spatial, single-cell, and bulk expression data.  
+
+
 Ecotyper can be run in an easy-to-use web interface accessible [here](https://ecotyper.stanford.edu/). The software can also be run on a personal computer, server or high-performance computing cluster following the instructions described in this GitHub repository. For further details, users may refer to our [book chapter](https://github.com/digitalcytometry/ecotyper/blob/master/EcoTyper_MiMB_Chapter_2023.pdf) ([Methods in Molecular Biology, 2023](https://pubmed.ncbi.nlm.nih.gov/36929073/)). 
 
 We have already defined cell states and ecotypes across **carcinomas**
