@@ -39,6 +39,33 @@ def materialize_block(matrix):
     return np.asarray(matrix)
 
 
+def optional_positive_int(value):
+    if value in {None, "", "null", "NULL"}:
+        return None
+    value = int(value)
+    return value if value > 0 else None
+
+
+def selected_cell_positions(obs, cell_type_column, max_cells_per_cell_type, seed):
+    if max_cells_per_cell_type is None:
+        return np.arange(len(obs))
+
+    rng = np.random.default_rng(seed)
+    selected = []
+    cell_types = obs[cell_type_column].astype(str)
+    for _cell_type, positions in pd.Series(np.arange(len(obs))).groupby(
+        cell_types.to_numpy(), sort=False
+    ):
+        positions = positions.to_numpy()
+        if len(positions) > max_cells_per_cell_type:
+            positions = rng.choice(
+                positions, size=max_cells_per_cell_type, replace=False
+            )
+        selected.extend(positions.tolist())
+
+    return np.asarray(sorted(selected), dtype=int)
+
+
 def matrix_layer(adata, layer):
     if layer in {None, "", "null", "NULL"}:
         return adata.X
@@ -80,6 +107,7 @@ def write_annotation(obs, output_path, cell_ids, cell_type_column, sample_column
     extras = [column for column in annotation.columns if column not in leading]
     annotation = annotation[leading + extras]
     annotation.to_csv(output_path, sep="\t", index=False)
+    return annotation
 
 
 def write_expression(matrix, output_path, genes, cells, chunk_genes):
@@ -101,11 +129,16 @@ def write_expression(matrix, output_path, genes, cells, chunk_genes):
 h5ad_path = Path(snakemake.input["h5ad"])
 matrix_output = Path(snakemake.output["matrix"])
 annotation_output = Path(snakemake.output["annotation"])
+selected_cells_output = Path(snakemake.output["selected_cells"])
 layer = snakemake.params.get("layer")
 cell_type_column = snakemake.params["cell_type_column"]
 sample_column = snakemake.params["sample_column"]
 gene_symbol_column = snakemake.params.get("gene_symbol_column")
 chunk_genes = int(snakemake.params["chunk_genes"])
+max_cells_per_cell_type = optional_positive_int(
+    snakemake.params.get("max_cells_per_cell_type")
+)
+sampling_seed = int(snakemake.params["sampling_seed"])
 sanitize_ids = as_bool(snakemake.params["sanitize_ids"])
 
 if chunk_genes < 1:
@@ -113,15 +146,23 @@ if chunk_genes < 1:
 
 matrix_output.parent.mkdir(parents=True, exist_ok=True)
 annotation_output.parent.mkdir(parents=True, exist_ok=True)
+selected_cells_output.parent.mkdir(parents=True, exist_ok=True)
 
 adata = ad.read_h5ad(h5ad_path, backed="r")
 matrix = matrix_layer(adata, layer)
-cells = (
-    make_safe_ids(adata.obs_names)
-    if sanitize_ids
-    else list(adata.obs_names.astype(str))
+selected_positions = selected_cell_positions(
+    adata.obs, cell_type_column, max_cells_per_cell_type, sampling_seed
 )
+selected_obs = adata.obs.iloc[selected_positions].copy()
+source_cells = adata.obs_names[selected_positions].astype(str)
+cells = make_safe_ids(source_cells) if sanitize_ids else list(source_cells)
 genes = gene_names(adata, gene_symbol_column)
+matrix = matrix[selected_positions, :]
 
-write_annotation(adata.obs, annotation_output, cells, cell_type_column, sample_column)
+annotation = write_annotation(
+    selected_obs, annotation_output, cells, cell_type_column, sample_column
+)
+selected_manifest = annotation[["ID", "CellType", "Sample"]].copy()
+selected_manifest.insert(0, "SourceID", source_cells)
+selected_manifest.to_csv(selected_cells_output, sep="\t", index=False)
 write_expression(matrix, matrix_output, genes, cells, chunk_genes)

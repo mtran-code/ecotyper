@@ -22,6 +22,7 @@ RUN_COMPLETE = f"{RESULTS_DIR}/{RUN_NAME}/.complete"
 H5AD_PREP_DIR = f"{PROC_DIR}/h5ad/{RUN_NAME}"
 H5AD_MATRIX = f"{H5AD_PREP_DIR}/data.txt"
 H5AD_ANNOTATION = f"{H5AD_PREP_DIR}/annotation.txt"
+H5AD_SELECTED_CELLS = f"{H5AD_PREP_DIR}/selected_cells.tsv"
 
 ENTRYPOINTS = {
     "discovery_scRNA": "workflow/scripts/EcoTyper_discovery_scRNA.R",
@@ -53,6 +54,7 @@ if USE_H5AD_INPUT:
         output:
             matrix=H5AD_MATRIX,
             annotation=H5AD_ANNOTATION,
+            selected_cells=H5AD_SELECTED_CELLS,
         params:
             layer=lambda _wildcards: input_cfg.get("h5ad_layer"),
             cell_type_column=lambda _wildcards: input_cfg.get(
@@ -65,6 +67,12 @@ if USE_H5AD_INPUT:
                 "h5ad_gene_symbol_column"
             ),
             chunk_genes=lambda _wildcards: int(input_cfg.get("h5ad_chunk_genes", 512)),
+            max_cells_per_cell_type=lambda _wildcards: input_cfg.get(
+                "h5ad_max_cells_per_cell_type"
+            ),
+            sampling_seed=lambda _wildcards: int(
+                input_cfg.get("h5ad_sampling_seed", 1234)
+            ),
             sanitize_ids=lambda _wildcards: bool(
                 input_cfg.get("h5ad_sanitize_ids", True)
             ),
@@ -77,6 +85,7 @@ rule render_ecotyper_config:
         source_config="config.yml",
         h5ad_matrix=H5AD_MATRIX if USE_H5AD_INPUT else [],
         h5ad_annotation=H5AD_ANNOTATION if USE_H5AD_INPUT else [],
+        h5ad_selected_cells=H5AD_SELECTED_CELLS if USE_H5AD_INPUT else [],
     output:
         LEGACY_CONFIG,
     params:
