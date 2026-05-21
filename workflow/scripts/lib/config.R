@@ -1,4 +1,36 @@
 library(data.table)
+
+configure_nmf_backend <- function(config) {
+  settings = config$"Pipeline settings"
+
+  backend = settings$"NMF backend"
+  if (is.null(backend) || is.na(backend)) {
+    backend = "r"
+  }
+
+  torch_device = settings$"NMF torch device"
+  if (is.null(torch_device) || is.na(torch_device)) {
+    torch_device = "auto"
+  }
+
+  max_iter = settings$"NMF max iterations"
+  if (is.null(max_iter) || is.na(max_iter)) {
+    max_iter = 500
+  }
+
+  tolerance = settings$"NMF tolerance"
+  if (is.null(tolerance) || is.na(tolerance)) {
+    tolerance = 0.0001
+  }
+
+  Sys.setenv(
+    ECOTYPER_NMF_BACKEND = as.character(backend),
+    ECOTYPER_NMF_TORCH_DEVICE = as.character(torch_device),
+    ECOTYPER_NMF_MAX_ITER = as.character(max_iter),
+    ECOTYPER_NMF_TOLERANCE = as.character(tolerance)
+  )
+}
+
 check_discovery_configuration <- function(config) {
   input_mat = config$Input$"Expression matrix"
   discovery = config$Input$"Discovery dataset name"

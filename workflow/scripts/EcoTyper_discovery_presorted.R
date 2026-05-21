@@ -34,6 +34,7 @@ if (args$h || is.null(args$config)) {
 config_file = abspath(args$config)
 
 config <- config::get(file = config_file)
+configure_nmf_backend(config)
 check_discovery_configuration_presorted(config)
 
 discovery = config$Input$"Discovery dataset name"

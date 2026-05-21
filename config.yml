@@ -28,6 +28,11 @@ pipeline:
   filter_non_cell_type_specific_genes: false
   threads: 10
   nmf_restarts: 5
+  # NMF backend: r, torch, or auto. auto uses torch when a GPU backend is available.
+  nmf_backend: r
+  nmf_torch_device: auto
+  nmf_max_iter: 500
+  nmf_tolerance: 0.0001
   max_states_per_cell_type: 20
   cophenetic_cutoff: 0.975
   jaccard_p_value_cutoff: 1
