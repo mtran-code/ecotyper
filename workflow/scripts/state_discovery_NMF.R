@@ -48,6 +48,12 @@ run_torch_nmf <- function(input_file, output_dir, n_clusters, seed) {
   ))
   storage.mode(W) = "double"
   storage.mode(H) = "double"
+  metadata = readLines(file.path(output_dir, "torch_metadata.json"))
+  final_loss = grep("\"final_loss\"", metadata, value = T)
+  residual = as.numeric(sub(".*: ([^,]+),?", "\\1", final_loss))
+  if (!is.finite(residual)) {
+    residual = 0
+  }
 
   model = nmfModel(W = W, H = H)
   methods::new(
@@ -55,7 +61,7 @@ run_torch_nmf <- function(input_file, output_dir, n_clusters, seed) {
     fit = model,
     method = paste0("torch:", Sys.getenv("ECOTYPER_NMF_TORCH_DEVICE", "auto")),
     seed = as.character(seed),
-    residuals = NA_real_
+    residuals = residual
   )
 }
 
