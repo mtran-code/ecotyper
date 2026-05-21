@@ -102,8 +102,7 @@ results_dir = Path(snakemake.params["results_dir"])
 output_dir = str(results_dir / run_name)
 use_h5ad_input = bool(snakemake.params.get("use_h5ad_input", False))
 
-with open(snakemake.input["source_config"], encoding="utf-8") as handle:
-    config = yaml.safe_load(handle)
+config = dict(snakemake.config)
 
 if use_h5ad_input:
     h5ad_dir = proc_dir / "h5ad" / run_name
