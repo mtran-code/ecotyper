@@ -25,6 +25,7 @@ input:
   h5ad_gene_symbol_column: null
   h5ad_chunk_genes: 512
   h5ad_max_cells_per_cell_type: null
+  h5ad_sampling_strata_column: null
   h5ad_sampling_seed: 1234
   h5ad_sanitize_ids: true
   h5ad_direct_cell_state_inputs: false

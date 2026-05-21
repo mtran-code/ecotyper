@@ -26,9 +26,11 @@ pixi run r-install-legacy
 
 Edit `config/config.yml`. For local datasets, point inputs at files under `data/rawdata/<dataset-name>/`.
 
+The GSE241745 local discovery profile is available at `config/gse241745_discovery.yml`.
+
 For scRNA discovery, set `input.expression_format: h5ad` and `input.h5ad_file` to read sparse AnnData inputs directly. The workflow stages EcoTyper-compatible expression and annotation files under `data/procdata/h5ad/<run.name>/`, using `obs` columns configured by `input.h5ad_cell_type_column` and `input.h5ad_sample_column`.
 
-Set `input.h5ad_max_cells_per_cell_type` to sample cells per cell type before matrix blocks are read from disk. The selected cells are recorded in `data/procdata/h5ad/<run.name>/selected_cells.tsv`.
+Set `input.h5ad_max_cells_per_cell_type` to sample cells per cell type before matrix blocks are read from disk. Set `input.h5ad_sampling_strata_column` to keep capped sampling balanced across a column such as sample ID. The selected cells are recorded in `data/procdata/h5ad/<run.name>/selected_cells.tsv`.
 
 For larger h5ad inputs, set `input.h5ad_direct_cell_state_inputs: true` to bypass the legacy global dense `data.txt` staging path. Direct mode reads the h5ad in backed mode, applies optional cell sampling and HVG selection first, then writes the per-cell-type EcoTyper intermediates consumed by state discovery. It supports external annotation joins through `input.h5ad_annotation_file`, `input.h5ad_annotation_id_column`, and `input.h5ad_obs_id_column`.
 

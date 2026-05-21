@@ -21,6 +21,10 @@ def optional_positive_int(value):
     return value if value > 0 else None
 
 
+def is_missing(value):
+    return value in {None, "", "null", "NULL"}
+
+
 def safe_id(value):
     safe = re.sub(r"[^0-9A-Za-z_.]", ".", str(value))
     if re.match(r"^[0-9]", safe):
@@ -91,8 +95,42 @@ def gene_names(adata, gene_symbol_column):
     return pd.Index(make_unique(names.tolist()))
 
 
-def selected_cell_positions(obs, cell_type_column, max_cells_per_cell_type, seed):
+def stratified_sample_positions(obs, positions, strata_column, size, rng):
+    strata = obs.iloc[positions][strata_column].astype(str).to_numpy()
+    grouped = [
+        group.to_numpy()
+        for _stratum, group in pd.Series(positions).groupby(strata, sort=False)
+    ]
+    selected = []
+    remaining = size
+    for index, group in enumerate(sorted(grouped, key=len)):
+        groups_left = len(grouped) - index
+        target = int(np.ceil(remaining / groups_left))
+        take = min(len(group), target)
+        if take < len(group):
+            group = rng.choice(group, size=take, replace=False)
+        selected.extend(group.tolist())
+        remaining -= take
+    return np.asarray(selected, dtype=int)
+
+
+def selected_cell_positions(
+    obs,
+    cell_type_column,
+    max_cells_per_cell_type,
+    sampling_strata_column,
+    seed,
+):
     rng = np.random.default_rng(seed)
+    if (
+        max_cells_per_cell_type is not None
+        and not is_missing(sampling_strata_column)
+        and sampling_strata_column not in obs
+    ):
+        raise ValueError(
+            f"input.h5ad_sampling_strata_column '{sampling_strata_column}' not found"
+        )
+
     selected = []
     cell_types = obs[cell_type_column].astype(str)
     for _cell_type, positions in pd.Series(np.arange(len(obs))).groupby(
@@ -103,9 +141,18 @@ def selected_cell_positions(obs, cell_type_column, max_cells_per_cell_type, seed
             max_cells_per_cell_type is not None
             and len(positions) > max_cells_per_cell_type
         ):
-            positions = rng.choice(
-                positions, size=max_cells_per_cell_type, replace=False
-            )
+            if is_missing(sampling_strata_column):
+                positions = rng.choice(
+                    positions, size=max_cells_per_cell_type, replace=False
+                )
+            else:
+                positions = stratified_sample_positions(
+                    obs,
+                    positions,
+                    sampling_strata_column,
+                    max_cells_per_cell_type,
+                    rng,
+                )
         selected.extend(positions.tolist())
     return np.asarray(sorted(selected), dtype=int)
 
@@ -302,6 +349,7 @@ max_cells_per_cell_type = optional_positive_int(
     snakemake.params.get("max_cells_per_cell_type")
 )
 sampling_seed = int(snakemake.params["sampling_seed"])
+sampling_strata_column = snakemake.params.get("sampling_strata_column")
 sanitize_ids = as_bool(snakemake.params["sanitize_ids"])
 feature_selection = snakemake.params["feature_selection"]
 n_top_genes = optional_positive_int(snakemake.params.get("n_top_genes"))
@@ -351,7 +399,11 @@ obs_frame = obs_frame[
     & ~obs_frame[cell_type_column].astype(str).isin({"", "NA", "nan", "None"})
 ].reset_index(drop=True)
 selected_frame_positions = selected_cell_positions(
-    obs_frame, cell_type_column, max_cells_per_cell_type, sampling_seed
+    obs_frame,
+    cell_type_column,
+    max_cells_per_cell_type,
+    sampling_strata_column,
+    sampling_seed,
 )
 selected_obs = obs_frame.iloc[selected_frame_positions].copy()
 selected_positions = selected_obs["_h5ad_pos"].to_numpy(dtype=int)
@@ -433,5 +485,8 @@ summary = {
     "min_cells_per_gene": min_cells_per_gene,
     "min_cells_per_cell_type": min_cells_per_cell_type,
     "max_cells_per_cell_type": max_cells_per_cell_type,
+    "sampling_strata_column": None
+    if is_missing(sampling_strata_column)
+    else str(sampling_strata_column),
 }
 complete_output.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

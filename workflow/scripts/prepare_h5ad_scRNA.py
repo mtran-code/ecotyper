@@ -50,9 +50,43 @@ def optional_positive_int(value):
     return value if value > 0 else None
 
 
-def selected_cell_positions(obs, cell_type_column, max_cells_per_cell_type, seed):
+def is_missing(value):
+    return value in {None, "", "null", "NULL"}
+
+
+def stratified_sample_positions(obs, positions, strata_column, size, rng):
+    strata = obs.iloc[positions][strata_column].astype(str).to_numpy()
+    grouped = [
+        group.to_numpy()
+        for _stratum, group in pd.Series(positions).groupby(strata, sort=False)
+    ]
+    selected = []
+    remaining = size
+    for index, group in enumerate(sorted(grouped, key=len)):
+        groups_left = len(grouped) - index
+        target = int(np.ceil(remaining / groups_left))
+        take = min(len(group), target)
+        if take < len(group):
+            group = rng.choice(group, size=take, replace=False)
+        selected.extend(group.tolist())
+        remaining -= take
+    return np.asarray(selected, dtype=int)
+
+
+def selected_cell_positions(
+    obs,
+    cell_type_column,
+    max_cells_per_cell_type,
+    sampling_strata_column,
+    seed,
+):
     if max_cells_per_cell_type is None:
         return np.arange(len(obs))
+
+    if not is_missing(sampling_strata_column) and sampling_strata_column not in obs:
+        raise ValueError(
+            f"input.h5ad_sampling_strata_column '{sampling_strata_column}' not found"
+        )
 
     rng = np.random.default_rng(seed)
     selected = []
@@ -62,9 +96,18 @@ def selected_cell_positions(obs, cell_type_column, max_cells_per_cell_type, seed
     ):
         positions = positions.to_numpy()
         if len(positions) > max_cells_per_cell_type:
-            positions = rng.choice(
-                positions, size=max_cells_per_cell_type, replace=False
-            )
+            if is_missing(sampling_strata_column):
+                positions = rng.choice(
+                    positions, size=max_cells_per_cell_type, replace=False
+                )
+            else:
+                positions = stratified_sample_positions(
+                    obs,
+                    positions,
+                    sampling_strata_column,
+                    max_cells_per_cell_type,
+                    rng,
+                )
         selected.extend(positions.tolist())
 
     return np.asarray(sorted(selected), dtype=int)
@@ -143,6 +186,7 @@ max_cells_per_cell_type = optional_positive_int(
     snakemake.params.get("max_cells_per_cell_type")
 )
 sampling_seed = int(snakemake.params["sampling_seed"])
+sampling_strata_column = snakemake.params.get("sampling_strata_column")
 sanitize_ids = as_bool(snakemake.params["sanitize_ids"])
 
 if chunk_genes < 1:
@@ -155,7 +199,11 @@ selected_cells_output.parent.mkdir(parents=True, exist_ok=True)
 adata = ad.read_h5ad(h5ad_path, backed="r")
 matrix = matrix_layer(adata, layer)
 selected_positions = selected_cell_positions(
-    adata.obs, cell_type_column, max_cells_per_cell_type, sampling_seed
+    adata.obs,
+    cell_type_column,
+    max_cells_per_cell_type,
+    sampling_strata_column,
+    sampling_seed,
 )
 selected_obs = adata.obs.iloc[selected_positions].copy()
 source_cells = adata.obs_names[selected_positions].astype(str)

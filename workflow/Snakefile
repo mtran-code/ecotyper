@@ -78,6 +78,9 @@ if USE_H5AD_INPUT and not USE_H5AD_DIRECT:
             max_cells_per_cell_type=lambda _wildcards: input_cfg.get(
                 "h5ad_max_cells_per_cell_type"
             ),
+            sampling_strata_column=lambda _wildcards: input_cfg.get(
+                "h5ad_sampling_strata_column"
+            ),
             sampling_seed=lambda _wildcards: int(
                 input_cfg.get("h5ad_sampling_seed", 1234)
             ),
@@ -121,6 +124,9 @@ if USE_H5AD_DIRECT:
             chunk_genes=lambda _wildcards: int(input_cfg.get("h5ad_chunk_genes", 512)),
             max_cells_per_cell_type=lambda _wildcards: input_cfg.get(
                 "h5ad_max_cells_per_cell_type"
+            ),
+            sampling_strata_column=lambda _wildcards: input_cfg.get(
+                "h5ad_sampling_strata_column"
             ),
             sampling_seed=lambda _wildcards: int(
                 input_cfg.get("h5ad_sampling_seed", 1234)

@@ -1,0 +1,63 @@
+# Recommended local discovery run for GSE241745.
+# This uses direct h5ad preparation to avoid dense global data.txt staging.
+paths:
+  raw_dir: data/rawdata
+  proc_dir: data/procdata
+  results_dir: data/results
+
+run:
+  mode: discovery_scRNA
+  name: gse241745_discovery
+
+input:
+  discovery_dataset_name: GSE241745_discovery
+  expression_format: h5ad
+  expression_matrix: null
+  h5ad_file: data/rawdata/GSE241745/GSE241745.h5ad
+  h5ad_annotation_file: data/rawdata/GSE241745/annotations_consensus.tsv.gz
+  h5ad_annotation_id_column: cell_id
+  h5ad_obs_id_column: cell_id
+  h5ad_layer: cpm
+  h5ad_cell_type_column: final_cell_type
+  h5ad_sample_column: sample_id
+  h5ad_gene_symbol_column: gene_symbol
+  h5ad_chunk_genes: 512
+  h5ad_max_cells_per_cell_type: 750
+  h5ad_sampling_strata_column: sample_id
+  h5ad_sampling_seed: 20260521
+  h5ad_sanitize_ids: true
+  h5ad_direct_cell_state_inputs: true
+  h5ad_feature_selection: hvg
+  h5ad_n_top_genes: 3000
+  h5ad_min_cells_per_gene: 10
+  h5ad_min_cells_per_cell_type: 250
+  expression_matrices: null
+  annotation_file: null
+  expression_type: scRNA
+  scale_by: sample_id
+  plot_columns:
+    - sample_id
+    - patient_id
+    - histology
+    - integrated_diagnosis
+    - who_grade
+  cibersortx_username: null
+  cibersortx_token: null
+  cell_type_fractions: null
+
+pipeline:
+  steps_to_skip: []
+  filter_genes: no filter
+  filter_non_cell_type_specific_genes: false
+  threads: 10
+  nmf_restarts: 10
+  nmf_backend: torch
+  nmf_torch_device: auto
+  nmf_max_iter: 1000
+  nmf_tolerance: 0.00001
+  max_states_per_cell_type: 6
+  cophenetic_cutoff: 0.975
+  jaccard_p_value_cutoff: 0.05
+  min_states_in_ecotypes: 3
+  cibersortx_fractions_singularity: null
+  cibersortx_hires_singularity: null
