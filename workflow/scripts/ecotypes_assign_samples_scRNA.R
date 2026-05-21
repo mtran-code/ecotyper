@@ -318,9 +318,40 @@ write.table(
   file.path(output_dir, "ecotype_assignment.txt"),
   sep = "\t"
 )
-small_H = as.matrix(all_H[, match(clinical_filt$ID, colnames(all_H))])
-if (is.null(small_H) || nrow(small_H) == 0 || ncol(small_H) == 0) {
-  stop(paste("No samples were assigned to ecotypes!"))
+small_H = as.matrix(all_H[, match(clinical_filt$ID, colnames(all_H)), drop = F])
+if (
+  is.null(small_H) ||
+    nrow(small_H) == 0 ||
+    ncol(small_H) < 2 ||
+    length(unique(clinical_filt$Ecotype)) < 2
+) {
+  pdf(
+    file.path(output_dir, "heatmap_assigned_samples_viridis.pdf"),
+    width = 8,
+    height = 8
+  )
+  plot.new()
+  text(
+    0.5,
+    0.5,
+    "Too few assigned samples/ecotypes for assigned-sample heatmap"
+  )
+  tmp = dev.off()
+  png(
+    file.path(output_dir, "heatmap_assigned_samples_viridis.png"),
+    width = 8,
+    height = 8,
+    units = "in",
+    res = 300
+  )
+  plot.new()
+  text(
+    0.5,
+    0.5,
+    "Too few assigned samples/ecotypes for assigned-sample heatmap"
+  )
+  tmp = dev.off()
+  quit(status = 0, save = "no")
 }
 h = heatmap_simple(
   small_H,
