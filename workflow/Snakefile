@@ -1,7 +1,5 @@
 from pathlib import Path
 
-configfile: "config.yml"
-
 
 def normalize_path(value):
     return str(value).rstrip("/")
@@ -150,7 +148,7 @@ if USE_H5AD_DIRECT:
 
 rule render_ecotyper_config:
     input:
-        source_config="config.yml",
+        source_config="config/config.yml",
         h5ad_matrix=H5AD_MATRIX if USE_H5AD_INPUT and not USE_H5AD_DIRECT else [],
         h5ad_annotation=H5AD_ANNOTATION
         if USE_H5AD_INPUT and not USE_H5AD_DIRECT

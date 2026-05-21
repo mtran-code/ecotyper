@@ -4,7 +4,7 @@ This fork keeps the original EcoTyper R implementation but runs it from a reprod
 
 ## Layout
 
-- `config.yml`: run configuration.
+- `config/config.yml`: run configuration.
 - `Snakefile`: root workflow entrypoint.
 - `workflow/Snakefile`: modular Snakemake rules.
 - `workflow/scripts/`: R and Python scripts used by the workflow.
@@ -24,7 +24,7 @@ pixi run r-install-legacy
 
 ## Configure
 
-Edit `config.yml`. For local datasets, point inputs at files under `data/rawdata/<dataset-name>/`.
+Edit `config/config.yml`. For local datasets, point inputs at files under `data/rawdata/<dataset-name>/`.
 
 For scRNA discovery, set `input.expression_format: h5ad` and `input.h5ad_file` to read sparse AnnData inputs directly. The workflow stages EcoTyper-compatible expression and annotation files under `data/procdata/h5ad/<run.name>/`, using `obs` columns configured by `input.h5ad_cell_type_column` and `input.h5ad_sample_column`.
 
