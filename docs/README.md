@@ -26,6 +26,8 @@ pixi run r-install-legacy
 
 Edit `config.yml`. For local datasets, point inputs at files under `data/rawdata/<dataset-name>/`.
 
+For scRNA discovery, set `input.expression_format: h5ad` and `input.h5ad_file` to read sparse AnnData inputs directly. The workflow stages EcoTyper-compatible expression and annotation files under `data/procdata/h5ad/<run.name>/`, using `obs` columns configured by `input.h5ad_cell_type_column` and `input.h5ad_sample_column`.
+
 The default run mode is `discovery_scRNA`. The base workflow also supports `discovery_bulk` and `discovery_presorted`.
 
 ## Run

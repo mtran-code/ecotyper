@@ -12,7 +12,16 @@ run:
 input:
   # Use paths under data/rawdata/<dataset-name>/ when adding local datasets.
   discovery_dataset_name: discovery_scRNA
+  # Supported values for discovery_scRNA: txt, h5ad
+  expression_format: txt
   expression_matrix: null
+  h5ad_file: null
+  h5ad_layer: null
+  h5ad_cell_type_column: CellType
+  h5ad_sample_column: Sample
+  h5ad_gene_symbol_column: null
+  h5ad_chunk_genes: 512
+  h5ad_sanitize_ids: true
   expression_matrices: null
   annotation_file: null
   expression_type: scRNA

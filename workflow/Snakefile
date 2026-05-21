@@ -9,6 +9,7 @@ def normalize_path(value):
 
 paths_cfg = dict(config["paths"])
 run_cfg = dict(config["run"])
+input_cfg = dict(config["input"])
 
 RAW_DIR = normalize_path(paths_cfg["raw_dir"])
 PROC_DIR = normalize_path(paths_cfg["proc_dir"])
@@ -18,6 +19,9 @@ RUN_NAME = run_cfg.get("name", RUN_MODE)
 
 LEGACY_CONFIG = f"{PROC_DIR}/config/{RUN_NAME}.ecotyper.yml"
 RUN_COMPLETE = f"{RESULTS_DIR}/{RUN_NAME}/.complete"
+H5AD_PREP_DIR = f"{PROC_DIR}/h5ad/{RUN_NAME}"
+H5AD_MATRIX = f"{H5AD_PREP_DIR}/data.txt"
+H5AD_ANNOTATION = f"{H5AD_PREP_DIR}/annotation.txt"
 
 ENTRYPOINTS = {
     "discovery_scRNA": "workflow/scripts/EcoTyper_discovery_scRNA.R",
@@ -32,16 +36,55 @@ if RUN_MODE not in ENTRYPOINTS:
 
 ALL_TARGETS = [RUN_COMPLETE]
 
+USE_H5AD_INPUT = (
+    RUN_MODE == "discovery_scRNA"
+    and str(input_cfg.get("expression_format", "txt")).lower() == "h5ad"
+)
+
+if USE_H5AD_INPUT and not input_cfg.get("h5ad_file"):
+    raise ValueError("input.h5ad_file is required when input.expression_format is h5ad")
+
+
+if USE_H5AD_INPUT:
+
+    rule prepare_h5ad_scRNA:
+        input:
+            h5ad=lambda _wildcards: input_cfg["h5ad_file"],
+        output:
+            matrix=H5AD_MATRIX,
+            annotation=H5AD_ANNOTATION,
+        params:
+            layer=lambda _wildcards: input_cfg.get("h5ad_layer"),
+            cell_type_column=lambda _wildcards: input_cfg.get(
+                "h5ad_cell_type_column", "CellType"
+            ),
+            sample_column=lambda _wildcards: input_cfg.get(
+                "h5ad_sample_column", "Sample"
+            ),
+            gene_symbol_column=lambda _wildcards: input_cfg.get(
+                "h5ad_gene_symbol_column"
+            ),
+            chunk_genes=lambda _wildcards: int(input_cfg.get("h5ad_chunk_genes", 512)),
+            sanitize_ids=lambda _wildcards: bool(
+                input_cfg.get("h5ad_sanitize_ids", True)
+            ),
+        script:
+            "scripts/prepare_h5ad_scRNA.py"
+
 
 rule render_ecotyper_config:
     input:
-        "config.yml",
+        source_config="config.yml",
+        h5ad_matrix=H5AD_MATRIX if USE_H5AD_INPUT else [],
+        h5ad_annotation=H5AD_ANNOTATION if USE_H5AD_INPUT else [],
     output:
         LEGACY_CONFIG,
     params:
         mode=RUN_MODE,
         run_name=RUN_NAME,
+        proc_dir=PROC_DIR,
         results_dir=RESULTS_DIR,
+        use_h5ad_input=USE_H5AD_INPUT,
     script:
         "scripts/render_ecotyper_config.py"
 

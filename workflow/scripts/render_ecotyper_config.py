@@ -97,11 +97,18 @@ RENDERERS = {
 
 mode = snakemake.params["mode"]
 run_name = snakemake.params["run_name"]
+proc_dir = Path(snakemake.params["proc_dir"])
 results_dir = Path(snakemake.params["results_dir"])
 output_dir = str(results_dir / run_name)
+use_h5ad_input = bool(snakemake.params.get("use_h5ad_input", False))
 
-with open(snakemake.input[0], encoding="utf-8") as handle:
+with open(snakemake.input["source_config"], encoding="utf-8") as handle:
     config = yaml.safe_load(handle)
+
+if use_h5ad_input:
+    h5ad_dir = proc_dir / "h5ad" / run_name
+    config["input"]["expression_matrix"] = str(h5ad_dir / "data.txt")
+    config["input"]["annotation_file"] = str(h5ad_dir / "annotation.txt")
 
 legacy = {"default": RENDERERS[mode](config, output_dir)}
 
