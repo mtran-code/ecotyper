@@ -26,6 +26,10 @@ def legacy_common(config, output_dir):
             "Filter genes": pipeline_cfg.get("filter_genes", "cell type specific"),
             "Number of threads": pipeline_cfg.get("threads", 10),
             "Number of NMF restarts": pipeline_cfg.get("nmf_restarts", 5),
+            "NMF backend": pipeline_cfg.get("nmf_backend", "r"),
+            "NMF torch device": pipeline_cfg.get("nmf_torch_device", "auto"),
+            "NMF max iterations": pipeline_cfg.get("nmf_max_iter", 500),
+            "NMF tolerance": pipeline_cfg.get("nmf_tolerance", 0.0001),
             "Maximum number of states per cell type": pipeline_cfg.get(
                 "max_states_per_cell_type", 20
             ),

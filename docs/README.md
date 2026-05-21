@@ -47,3 +47,7 @@ pixi run snakemake
 ```
 
 Snakemake renders a legacy EcoTyper config under `data/procdata/config/` and writes final outputs under `data/results/<run.name>/`.
+
+## NMF Backend
+
+The default `pipeline.nmf_backend: r` uses the original R `NMF` implementation. Set `pipeline.nmf_backend: torch` or `auto` to run NMF updates through PyTorch; `auto` uses CUDA or Apple MPS when available and otherwise falls back to CPU. GPU-backed runs still write `estim.RData` restart files for downstream EcoTyper steps.
