@@ -54,6 +54,13 @@ run_torch_nmf <- function(input_file, output_dir, n_clusters, seed) {
   if (!is.finite(residual)) {
     residual = 0
   }
+  elapsed_line = grep("\"elapsed_seconds\"", metadata, value = T)
+  elapsed = as.numeric(sub(".*: ([^,]+),?", "\\1", elapsed_line))
+  runtime = proc.time()
+  runtime[] = 0
+  if (is.finite(elapsed)) {
+    runtime["elapsed"] = elapsed
+  }
 
   model = nmfModel(W = W, H = H)
   methods::new(
@@ -61,7 +68,8 @@ run_torch_nmf <- function(input_file, output_dir, n_clusters, seed) {
     fit = model,
     method = paste0("torch:", Sys.getenv("ECOTYPER_NMF_TORCH_DEVICE", "auto")),
     seed = as.character(seed),
-    residuals = residual
+    residuals = residual,
+    runtime = runtime
   )
 }
 

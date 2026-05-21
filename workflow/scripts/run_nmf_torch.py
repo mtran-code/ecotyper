@@ -132,6 +132,7 @@ def main():
             handle,
             indent=2,
         )
+        handle.write("\n")
 
 
 if __name__ == "__main__":
