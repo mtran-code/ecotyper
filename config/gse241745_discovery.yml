@@ -30,7 +30,7 @@ input:
   h5ad_feature_selection: hvg
   h5ad_n_top_genes: 3000
   h5ad_min_cells_per_gene: 10
-  h5ad_min_cells_per_cell_type: 250
+  h5ad_min_cells_per_cell_type: 500
   expression_matrices: null
   annotation_file: null
   expression_type: scRNA
