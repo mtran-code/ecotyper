@@ -8,7 +8,7 @@ version = "0.1.0"
 [tasks]
 snakemake = "snakemake --cores 1"
 dry-run = "snakemake --dry-run --cores 1"
-r-install-legacy = "Rscript -e \"pak::pkg_install(c('NMF', 'HiClimR'))\""
+r-install-legacy = "Rscript workflow/scripts/install_legacy_r_packages.R"
 
 [dependencies]
 snakemake-minimal = ">=9.21.0,<10"
