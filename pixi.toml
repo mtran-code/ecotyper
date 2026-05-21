@@ -6,6 +6,9 @@ platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
+snakemake = "snakemake --cores 1"
+dry-run = "snakemake --dry-run --cores 1"
+r-install-legacy = "Rscript -e \"pak::pkg_install(c('NMF', 'HiClimR'))\""
 
 [dependencies]
 snakemake-minimal = ">=9.21.0,<10"
@@ -25,3 +28,14 @@ numpy = ">=2.4.6,<3"
 scikit-learn = ">=1.8.0,<2"
 pyyaml = ">=6.0.3,<7"
 pytorch = ">=2.10.0,<3"
+r-rcolorbrewer = ">=1.1_3,<2"
+r-ggplot2 = ">=4.0.3,<5"
+r-reshape2 = ">=1.4.5,<2"
+r-cowplot = ">=1.2.0,<2"
+r-colorspace = ">=2.1_2,<3"
+r-plyr = ">=1.8.9,<2"
+r-viridis = ">=0.6.5,<0.7"
+r-matrix = ">=1.7_5,<2"
+r-matrixtests = ">=0.2.3.1,<0.3"
+r-circlize = ">=0.4.18,<0.5"
+bioconductor-complexheatmap = ">=2.26.1,<3"

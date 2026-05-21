@@ -1,0 +1,58 @@
+from pathlib import Path
+
+configfile: "config.yml"
+
+
+def normalize_path(value):
+    return str(value).rstrip("/")
+
+
+paths_cfg = dict(config["paths"])
+run_cfg = dict(config["run"])
+
+RAW_DIR = normalize_path(paths_cfg["raw_dir"])
+PROC_DIR = normalize_path(paths_cfg["proc_dir"])
+RESULTS_DIR = normalize_path(paths_cfg["results_dir"])
+RUN_MODE = run_cfg.get("mode", "discovery_scRNA")
+RUN_NAME = run_cfg.get("name", RUN_MODE)
+
+LEGACY_CONFIG = f"{PROC_DIR}/config/{RUN_NAME}.ecotyper.yml"
+RUN_COMPLETE = f"{RESULTS_DIR}/{RUN_NAME}/.complete"
+
+ENTRYPOINTS = {
+    "discovery_scRNA": "workflow/scripts/EcoTyper_discovery_scRNA.R",
+    "discovery_bulk": "workflow/scripts/EcoTyper_discovery_bulk.R",
+    "discovery_presorted": "workflow/scripts/EcoTyper_discovery_presorted.R",
+}
+
+if RUN_MODE not in ENTRYPOINTS:
+    raise ValueError(
+        "Unsupported run.mode. Expected one of: " + ", ".join(sorted(ENTRYPOINTS))
+    )
+
+ALL_TARGETS = [RUN_COMPLETE]
+
+
+rule render_ecotyper_config:
+    input:
+        "config.yml",
+    output:
+        LEGACY_CONFIG,
+    params:
+        mode=RUN_MODE,
+        run_name=RUN_NAME,
+        results_dir=RESULTS_DIR,
+    script:
+        "scripts/render_ecotyper_config.py"
+
+
+rule run_ecotyper:
+    input:
+        legacy_config=LEGACY_CONFIG,
+    output:
+        touch(RUN_COMPLETE),
+    params:
+        entrypoint=lambda _wildcards: ENTRYPOINTS[RUN_MODE],
+        output_dir=lambda _wildcards: str(Path(RESULTS_DIR) / RUN_NAME),
+    shell:
+        "Rscript {params.entrypoint} -c {input.legacy_config}"

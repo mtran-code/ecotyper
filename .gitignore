@@ -1,3 +1,14 @@
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+# Snakemake state and local runtime outputs
+.snakemake/
+
+# Project data layout. Keep directory anchors, not datasets or results.
+data/rawdata/*
+!data/rawdata/.gitkeep
+data/procdata/*
+!data/procdata/.gitkeep
+data/results/*
+!data/results/.gitkeep
