@@ -100,8 +100,7 @@ run_name = snakemake.params["run_name"]
 results_dir = Path(snakemake.params["results_dir"])
 output_dir = str(results_dir / run_name)
 
-with open(snakemake.input[0], encoding="utf-8") as handle:
-    config = yaml.safe_load(handle)
+config = dict(snakemake.config)
 
 legacy = {"default": RENDERERS[mode](config, output_dir)}
 
