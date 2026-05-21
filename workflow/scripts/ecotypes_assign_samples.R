@@ -99,6 +99,13 @@ H = do.call(
 rownames(H) = levels(ecotypes$Ecotype)
 #write.table(H, file.path(output_dir, "ecotype_abundance.txt"), sep = "\t")
 H = apply(H, 2, function(x) x / sum(x))
+if (is.null(dim(H))) {
+  H = matrix(
+    H,
+    nrow = length(levels(ecotypes$Ecotype)),
+    dimnames = list(levels(ecotypes$Ecotype), names(H))
+  )
+}
 write.table(H, file.path(output_dir, "ecotype_abundance.txt"), sep = "\t")
 
 p_vals = do.call(
@@ -125,6 +132,13 @@ p_vals = do.call(
     })
   })
 )
+if (is.null(dim(p_vals))) {
+  p_vals = matrix(
+    p_vals,
+    nrow = length(levels(ecotypes$Ecotype)),
+    dimnames = list(levels(ecotypes$Ecotype), names(p_vals))
+  )
+}
 rownames(p_vals) = levels(ecotypes$Ecotype)
 write.table(p_vals, file.path(output_dir, "assignment_p_vals.txt"), sep = "\t")
 
