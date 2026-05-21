@@ -105,12 +105,18 @@ check_discovery_configuration_scRNA <- function(config) {
   input_mat = config$Input$"Expression matrix"
   discovery = config$Input$"Discovery dataset name"
   annotation = config$Input$"Annotation file"
+  use_prepared_cell_state_inputs = as.logical(
+    config$"Pipeline settings"$"Use prepared cell state inputs"
+  )
+  if (is.na(use_prepared_cell_state_inputs)) {
+    use_prepared_cell_state_inputs = F
+  }
   p_value_cutoff = as.numeric(as.character(
     config$"Pipeline settings"$"Jaccard matrix p-value cutoff"
   ))
   output_dir = file.path("data/procdata/datasets/discovery", discovery)
 
-  if (!file.exists(input_mat)) {
+  if (!use_prepared_cell_state_inputs && !file.exists(input_mat)) {
     stop(paste0("Input format error: Input file '", input_mat, "' is missing!"))
   }
 
@@ -127,23 +133,26 @@ check_discovery_configuration_scRNA <- function(config) {
     ))
   }
 
-  mat = fread(input_mat, sep = "\t", nrows = 5)
-  if (ncol(mat) < 2) {
-    stop(paste0(
-      ncol(mat),
-      " columns detected in file '",
-      input_mat,
-      "'. Please make sure that the file is tab-delimited!"
+  dir.create(output_dir, recursive = T, showWarning = F)
+
+  if (!use_prepared_cell_state_inputs) {
+    mat = fread(input_mat, sep = "\t", nrows = 5)
+    if (ncol(mat) < 2) {
+      stop(paste0(
+        ncol(mat),
+        " columns detected in file '",
+        input_mat,
+        "'. Please make sure that the file is tab-delimited!"
+      ))
+    }
+    system(paste0(
+      "ln -sf '",
+      normalizePath(input_mat),
+      "' '",
+      file.path(output_dir, "data.txt"),
+      "'"
     ))
   }
-  dir.create(output_dir, recursive = T, showWarning = F)
-  system(paste0(
-    "ln -sf '",
-    normalizePath(input_mat),
-    "' '",
-    file.path(output_dir, "data.txt"),
-    "'"
-  ))
 
   if (!file.exists(annotation)) {
     stop(paste0(
@@ -170,7 +179,7 @@ check_discovery_configuration_scRNA <- function(config) {
     ))
   }
 
-  if (!all(colnames(mat)[-1] %in% ann$ID)) {
+  if (!use_prepared_cell_state_inputs && !all(colnames(mat)[-1] %in% ann$ID)) {
     stop(paste0(
       "Input format error: The following ids present in the column names of the expression matrix are missing from the annotation file (column 'ID'): '",
       paste(
@@ -181,13 +190,18 @@ check_discovery_configuration_scRNA <- function(config) {
     ))
   }
 
-  system(paste0(
-    "ln -sf '",
-    normalizePath(annotation),
-    "' '",
-    file.path(output_dir, "annotation.txt"),
-    "'"
-  ))
+  if (
+    normalizePath(annotation) !=
+      normalizePath(file.path(output_dir, "annotation.txt"))
+  ) {
+    system(paste0(
+      "ln -sf '",
+      normalizePath(annotation),
+      "' '",
+      file.path(output_dir, "annotation.txt"),
+      "'"
+    ))
+  }
 }
 
 check_discovery_configuration_presorted <- function(config) {

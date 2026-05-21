@@ -23,6 +23,13 @@ H5AD_PREP_DIR = f"{PROC_DIR}/h5ad/{RUN_NAME}"
 H5AD_MATRIX = f"{H5AD_PREP_DIR}/data.txt"
 H5AD_ANNOTATION = f"{H5AD_PREP_DIR}/annotation.txt"
 H5AD_SELECTED_CELLS = f"{H5AD_PREP_DIR}/selected_cells.tsv"
+H5AD_DIRECT_DIR = f"{PROC_DIR}/h5ad_direct/{RUN_NAME}"
+H5AD_DIRECT_COMPLETE = f"{H5AD_DIRECT_DIR}/.complete"
+H5AD_DIRECT_SELECTED_CELLS = f"{H5AD_DIRECT_DIR}/selected_cells.tsv"
+DISCOVERY_DATASET_DIR = (
+    f"{PROC_DIR}/datasets/discovery/{input_cfg.get('discovery_dataset_name')}"
+)
+DISCOVERY_ANNOTATION = f"{DISCOVERY_DATASET_DIR}/annotation.txt"
 
 ENTRYPOINTS = {
     "discovery_scRNA": "workflow/scripts/EcoTyper_discovery_scRNA.R",
@@ -41,12 +48,15 @@ USE_H5AD_INPUT = (
     RUN_MODE == "discovery_scRNA"
     and str(input_cfg.get("expression_format", "txt")).lower() == "h5ad"
 )
+USE_H5AD_DIRECT = USE_H5AD_INPUT and bool(
+    input_cfg.get("h5ad_direct_cell_state_inputs", False)
+)
 
 if USE_H5AD_INPUT and not input_cfg.get("h5ad_file"):
     raise ValueError("input.h5ad_file is required when input.expression_format is h5ad")
 
 
-if USE_H5AD_INPUT:
+if USE_H5AD_INPUT and not USE_H5AD_DIRECT:
 
     rule prepare_h5ad_scRNA:
         input:
@@ -80,12 +90,76 @@ if USE_H5AD_INPUT:
             "scripts/prepare_h5ad_scRNA.py"
 
 
+if USE_H5AD_DIRECT:
+
+    rule prepare_h5ad_direct_scRNA:
+        input:
+            h5ad=lambda _wildcards: input_cfg["h5ad_file"],
+            annotation=lambda _wildcards: input_cfg.get("h5ad_annotation_file") or [],
+        output:
+            complete=H5AD_DIRECT_COMPLETE,
+            annotation=DISCOVERY_ANNOTATION,
+            selected_cells=H5AD_DIRECT_SELECTED_CELLS,
+        params:
+            discovery_dataset_name=lambda _wildcards: input_cfg[
+                "discovery_dataset_name"
+            ],
+            proc_dir=PROC_DIR,
+            results_dir=RESULTS_DIR,
+            layer=lambda _wildcards: input_cfg.get("h5ad_layer"),
+            annotation_id_column=lambda _wildcards: input_cfg.get(
+                "h5ad_annotation_id_column", "ID"
+            ),
+            obs_id_column=lambda _wildcards: input_cfg.get("h5ad_obs_id_column"),
+            cell_type_column=lambda _wildcards: input_cfg.get(
+                "h5ad_cell_type_column", "CellType"
+            ),
+            sample_column=lambda _wildcards: input_cfg.get(
+                "h5ad_sample_column", "Sample"
+            ),
+            gene_symbol_column=lambda _wildcards: input_cfg.get(
+                "h5ad_gene_symbol_column"
+            ),
+            chunk_genes=lambda _wildcards: int(input_cfg.get("h5ad_chunk_genes", 512)),
+            max_cells_per_cell_type=lambda _wildcards: input_cfg.get(
+                "h5ad_max_cells_per_cell_type"
+            ),
+            sampling_seed=lambda _wildcards: int(
+                input_cfg.get("h5ad_sampling_seed", 1234)
+            ),
+            sanitize_ids=lambda _wildcards: bool(
+                input_cfg.get("h5ad_sanitize_ids", True)
+            ),
+            feature_selection=lambda _wildcards: input_cfg.get(
+                "h5ad_feature_selection", "all"
+            ),
+            n_top_genes=lambda _wildcards: input_cfg.get("h5ad_n_top_genes"),
+            min_cells_per_gene=lambda _wildcards: int(
+                input_cfg.get("h5ad_min_cells_per_gene", 3)
+            ),
+            min_cells_per_cell_type=lambda _wildcards: int(
+                input_cfg.get("h5ad_min_cells_per_cell_type", 50)
+            ),
+            filter_genes=lambda _wildcards: config["pipeline"].get(
+                "filter_genes", "cell type specific"
+            ),
+            scale_by=lambda _wildcards: input_cfg.get("scale_by"),
+        script:
+            "scripts/prepare_h5ad_direct_scRNA.py"
+
+
 rule render_ecotyper_config:
     input:
         source_config="config.yml",
-        h5ad_matrix=H5AD_MATRIX if USE_H5AD_INPUT else [],
-        h5ad_annotation=H5AD_ANNOTATION if USE_H5AD_INPUT else [],
-        h5ad_selected_cells=H5AD_SELECTED_CELLS if USE_H5AD_INPUT else [],
+        h5ad_matrix=H5AD_MATRIX if USE_H5AD_INPUT and not USE_H5AD_DIRECT else [],
+        h5ad_annotation=H5AD_ANNOTATION
+        if USE_H5AD_INPUT and not USE_H5AD_DIRECT
+        else [],
+        h5ad_selected_cells=H5AD_SELECTED_CELLS
+        if USE_H5AD_INPUT and not USE_H5AD_DIRECT
+        else [],
+        h5ad_direct_complete=H5AD_DIRECT_COMPLETE if USE_H5AD_DIRECT else [],
+        h5ad_direct_annotation=DISCOVERY_ANNOTATION if USE_H5AD_DIRECT else [],
     output:
         LEGACY_CONFIG,
     params:
@@ -94,6 +168,7 @@ rule render_ecotyper_config:
         proc_dir=PROC_DIR,
         results_dir=RESULTS_DIR,
         use_h5ad_input=USE_H5AD_INPUT,
+        use_h5ad_direct=USE_H5AD_DIRECT,
     script:
         "scripts/render_ecotyper_config.py"
 

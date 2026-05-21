@@ -30,6 +30,10 @@ For scRNA discovery, set `input.expression_format: h5ad` and `input.h5ad_file` t
 
 Set `input.h5ad_max_cells_per_cell_type` to sample cells per cell type before matrix blocks are read from disk. The selected cells are recorded in `data/procdata/h5ad/<run.name>/selected_cells.tsv`.
 
+For larger h5ad inputs, set `input.h5ad_direct_cell_state_inputs: true` to bypass the legacy global dense `data.txt` staging path. Direct mode reads the h5ad in backed mode, applies optional cell sampling and HVG selection first, then writes the per-cell-type EcoTyper intermediates consumed by state discovery. It supports external annotation joins through `input.h5ad_annotation_file`, `input.h5ad_annotation_id_column`, and `input.h5ad_obs_id_column`.
+
+Direct h5ad mode does not support `pipeline.filter_genes: cell type specific`; use `pipeline.filter_genes: no filter` with `input.h5ad_feature_selection: hvg` and `input.h5ad_n_top_genes` instead.
+
 The default run mode is `discovery_scRNA`. The base workflow also supports `discovery_bulk` and `discovery_presorted`.
 
 ## Run

@@ -29,6 +29,10 @@ def make_safe_ids(values):
     return safe_values
 
 
+def make_safe_labels(values):
+    return [re.sub(r"[^0-9A-Za-z_.]", "_", str(value)) or "label" for value in values]
+
+
 def materialize_block(matrix):
     if sparse.issparse(matrix):
         return matrix.toarray()
@@ -100,7 +104,7 @@ def write_annotation(obs, output_path, cell_ids, cell_type_column, sample_column
 
     annotation = obs.copy()
     annotation.insert(0, "ID", cell_ids)
-    annotation["CellType"] = annotation[cell_type_column].astype(str).to_numpy()
+    annotation["CellType"] = make_safe_labels(annotation[cell_type_column])
     annotation["Sample"] = annotation[sample_column].astype(str).to_numpy()
 
     leading = ["ID", "CellType", "Sample"]

@@ -24,6 +24,9 @@ def legacy_common(config, output_dir):
         "Pipeline settings": {
             "Pipeline steps to skip": pipeline_cfg.get("steps_to_skip", []),
             "Filter genes": pipeline_cfg.get("filter_genes", "cell type specific"),
+            "Use prepared cell state inputs": pipeline_cfg.get(
+                "use_prepared_cell_state_inputs", False
+            ),
             "Number of threads": pipeline_cfg.get("threads", 10),
             "Number of NMF restarts": pipeline_cfg.get("nmf_restarts", 5),
             "NMF backend": pipeline_cfg.get("nmf_backend", "r"),
@@ -105,13 +108,21 @@ proc_dir = Path(snakemake.params["proc_dir"])
 results_dir = Path(snakemake.params["results_dir"])
 output_dir = str(results_dir / run_name)
 use_h5ad_input = bool(snakemake.params.get("use_h5ad_input", False))
+use_h5ad_direct = bool(snakemake.params.get("use_h5ad_direct", False))
 
 config = dict(snakemake.config)
 
-if use_h5ad_input:
+if use_h5ad_input and not use_h5ad_direct:
     h5ad_dir = proc_dir / "h5ad" / run_name
     config["input"]["expression_matrix"] = str(h5ad_dir / "data.txt")
     config["input"]["annotation_file"] = str(h5ad_dir / "annotation.txt")
+
+if use_h5ad_direct:
+    discovery = config["input"]["discovery_dataset_name"]
+    annotation = proc_dir / "datasets" / "discovery" / discovery / "annotation.txt"
+    config["input"]["expression_matrix"] = None
+    config["input"]["annotation_file"] = str(annotation)
+    config["pipeline"]["use_prepared_cell_state_inputs"] = True
 
 legacy = {"default": RENDERERS[mode](config, output_dir)}
 

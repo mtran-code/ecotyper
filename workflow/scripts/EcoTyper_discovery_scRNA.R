@@ -52,6 +52,12 @@ cohpenetic_cutoff = config$"Pipeline settings"$"Cophenetic coefficient cutoff"
 skip_steps = config$"Pipeline settings"$"Pipeline steps to skip"
 p_value_cutoff = config$"Pipeline settings"$"Jaccard matrix p-value cutoff"
 min_states = config$"Pipeline settings"$"Minimum number of states in ecotypes"
+use_prepared_cell_state_inputs = as.logical(
+  config$"Pipeline settings"$"Use prepared cell state inputs"
+)
+if (is.na(use_prepared_cell_state_inputs)) {
+  use_prepared_cell_state_inputs = F
+}
 
 suppressWarnings({
   final_output = abspath(final_output)
@@ -77,7 +83,9 @@ if (config$"Pipeline settings"$"Filter genes" == "cell type specific") {
   }
 }
 
-if (!1 %in% skip_steps & fractions != "All_genes") {
+if (use_prepared_cell_state_inputs) {
+  cat("Skipping step 1 (prepared h5ad cell-state inputs supplied)...\n")
+} else if (!1 %in% skip_steps & fractions != "All_genes") {
   cat("\nStep 1 (extract cell type specific genes)...\n")
 
   annotation = read.delim(file.path(file.path(
@@ -103,10 +111,6 @@ if (!1 %in% skip_steps & fractions != "All_genes") {
 }
 
 if (!2 %in% skip_steps) {
-  cat(
-    "\nStep 2 (cell state discovery on correrlation matrices): Calculating correlation matrices...\n"
-  )
-
   annotation = read.delim(file.path(file.path(
     "../../data/procdata/datasets/discovery",
     discovery,
@@ -114,19 +118,29 @@ if (!2 %in% skip_steps) {
   )))
   cell_types = unlist(levels(as.factor(as.character(annotation$CellType))))
 
-  for (cell_type in cell_types) {
-    filter_genes = (fractions == "Cell_type_specific_genes") ||
-      grepl("Top_", fractions)
-    PushToJobQueue(paste(
-      "Rscript state_discovery_scRNA_distances.R",
-      discovery,
-      fractions,
-      cell_type,
-      filter_genes,
-      scale_column
-    ))
+  if (use_prepared_cell_state_inputs) {
+    cat(
+      "\nStep 2 (cell state discovery on correrlation matrices): Using prepared h5ad correlation matrices...\n"
+    )
+  } else {
+    cat(
+      "\nStep 2 (cell state discovery on correrlation matrices): Calculating correlation matrices...\n"
+    )
+
+    for (cell_type in cell_types) {
+      filter_genes = (fractions == "Cell_type_specific_genes") ||
+        grepl("Top_", fractions)
+      PushToJobQueue(paste(
+        "Rscript state_discovery_scRNA_distances.R",
+        discovery,
+        fractions,
+        cell_type,
+        filter_genes,
+        scale_column
+      ))
+    }
+    RunJobQueue()
   }
-  RunJobQueue()
 
   cat(
     "Step 2 (cell state discovery on correrlation matrices): Running NMF (Warning: This step might take a long time!)...\n"
