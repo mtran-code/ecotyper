@@ -50,9 +50,12 @@ run_torch_nmf <- function(input_file, output_dir, n_clusters, seed) {
   storage.mode(H) = "double"
 
   model = nmfModel(W = W, H = H)
-  NMFfit(
-    model,
-    method = paste0("torch:", Sys.getenv("ECOTYPER_NMF_TORCH_DEVICE", "auto"))
+  methods::new(
+    "NMFfit",
+    fit = model,
+    method = paste0("torch:", Sys.getenv("ECOTYPER_NMF_TORCH_DEVICE", "auto")),
+    seed = as.character(seed),
+    residuals = NA_real_
   )
 }
 
