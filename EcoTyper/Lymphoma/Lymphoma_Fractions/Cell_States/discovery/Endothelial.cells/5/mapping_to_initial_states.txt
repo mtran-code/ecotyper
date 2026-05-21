@@ -1,4 +1,0 @@
-"State"	"InitialState"
-"S01"	"IS04"
-"S02"	"IS03"
-"S03"	"IS05"
