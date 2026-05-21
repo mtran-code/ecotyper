@@ -243,11 +243,20 @@ jaccard = jaccard[
   match(top_ann$ID, rownames(jaccard))
 ]
 
-sil <- silhouette(
-  as.numeric(as.character(gsub("E", "", as.character(top_ann$Ecotype)))),
-  as.dist(1 - jaccard)
-)
-avg_silhouette <<- summary(sil)
+ecotype_ids = as.numeric(as.character(gsub(
+  "E",
+  "",
+  as.character(top_ann$Ecotype)
+)))
+if (length(unique(ecotype_ids)) < 2 || nrow(jaccard) < 3) {
+  avg_silhouette = list(avg.width = NA_real_)
+} else {
+  sil <- silhouette(ecotype_ids, as.dist(1 - jaccard))
+  avg_silhouette <<- summary(sil)
+  if (is.atomic(avg_silhouette) || is.null(avg_silhouette$avg.width)) {
+    avg_silhouette = list(avg.width = NA_real_)
+  }
+}
 write.table(
   avg_silhouette$avg.width,
   file.path(output_dir, "silhouette.txt"),
