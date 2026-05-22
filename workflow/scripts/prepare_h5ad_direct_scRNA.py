@@ -292,7 +292,7 @@ def prepare_cell_type(
     for start in range(0, len(selected_gene_positions), 512):
         stop = min(start + 512, len(selected_gene_positions))
         gene_idx = selected_gene_positions[start:stop]
-        block = materialize_block(matrix[positions[:, None], gene_idx])
+        block = materialize_block(matrix[positions, :][:, gene_idx])
         blocks.append(block.astype(np.float32, copy=False))
 
     expression = np.concatenate(blocks, axis=1)
