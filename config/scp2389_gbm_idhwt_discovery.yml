@@ -1,0 +1,66 @@
+# SCP2389 GBM IDH-wildtype discovery run.
+# Input is a donor-balanced h5ad subset built from raw sparse counts.
+paths:
+  raw_dir: data/rawdata
+  proc_dir: data/procdata
+  results_dir: data/results
+
+run:
+  mode: discovery_scRNA
+  name: scp2389_gbm_idhwt_discovery
+
+input:
+  discovery_dataset_name: SCP2389_GBM_IDHwt_discovery
+  expression_format: h5ad
+  expression_matrix: null
+  h5ad_file: data/rawdata/SCP2389/scp2389_gbm_idhwt_ecotyper_discovery.h5ad
+  h5ad_annotation_file: null
+  h5ad_annotation_id_column: ID
+  h5ad_obs_id_column: null
+  h5ad_layer: null
+  h5ad_cell_type_column: Total_Tumor_Annotation
+  h5ad_sample_column: donor_id
+  h5ad_gene_symbol_column: gene_symbol
+  h5ad_chunk_genes: 512
+  h5ad_max_cells_per_cell_type: 3000
+  h5ad_sampling_strata_column: donor_id
+  h5ad_sampling_seed: 20260522
+  h5ad_sanitize_ids: true
+  h5ad_direct_cell_state_inputs: true
+  h5ad_feature_selection: hvg
+  h5ad_n_top_genes: 3000
+  h5ad_min_cells_per_gene: 20
+  h5ad_min_cells_per_cell_type: 500
+  expression_matrices: null
+  annotation_file: null
+  expression_type: scRNA
+  scale_by: library_preparation_protocol
+  plot_columns:
+    - donor_id
+    - biosample_id
+    - Diagnosis
+    - IDH_Mutation_Status
+    - Grade
+    - Primary_Recurrent_Status
+    - Cohort
+    - library_preparation_protocol
+  cibersortx_username: null
+  cibersortx_token: null
+  cell_type_fractions: null
+
+pipeline:
+  steps_to_skip: []
+  filter_genes: no filter
+  filter_non_cell_type_specific_genes: false
+  threads: 10
+  nmf_restarts: 10
+  nmf_backend: torch
+  nmf_torch_device: auto
+  nmf_max_iter: 1000
+  nmf_tolerance: 0.00001
+  max_states_per_cell_type: 6
+  cophenetic_cutoff: 0.975
+  jaccard_p_value_cutoff: 0.05
+  min_states_in_ecotypes: 3
+  cibersortx_fractions_singularity: null
+  cibersortx_hires_singularity: null
